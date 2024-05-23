@@ -259,6 +259,13 @@ Or go to File &gt; Open</string>
               </item>
              </layout>
             </item>
+            <item>
+             <widget class="QPushButton" name="display_board_button">
+              <property name="text">
+               <string>Display board</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </widget>
          </item>
@@ -417,6 +424,16 @@ Or go to File &gt; Open</string>
                  </widget>
                 </item>
                 <item>
+                 <widget class="QLabel" name="focal_length_lbl">
+                  <property name="text">
+                   <string>Focal length (mm):</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
                  <widget class="QLabel" name="hfov_lbl">
                   <property name="text">
                    <string>hFOV (deg):</string>
@@ -487,6 +504,13 @@ Or go to File &gt; Open</string>
                 </item>
                 <item>
                  <widget class="QLabel" name="sol_cov_num">
+                  <property name="text">
+                   <string>0.0000</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="focal_length_num">
                   <property name="text">
                    <string>0.0000</string>
                   </property>
@@ -636,7 +660,7 @@ Or go to File &gt; Open</string>
     <string>Next board</string>
    </property>
    <property name="shortcut">
-    <string>F</string>
+    <string>Shift+Right</string>
    </property>
   </action>
   <action name="actionPrevious_board">
@@ -644,7 +668,7 @@ Or go to File &gt; Open</string>
     <string>Previous board</string>
    </property>
    <property name="shortcut">
-    <string>D</string>
+    <string>Shift+Left</string>
    </property>
   </action>
   <action name="actionJump_to_end">

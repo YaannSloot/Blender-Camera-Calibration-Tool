@@ -45,3 +45,4 @@ const CalibrationResult calibrate_camera(const ChessboardCorners& corners);
 
 const CalibrationResult calibrate_camera(const std::vector<ChessboardCorners>& corners, const int num_selections = 10);
 
+const cv::Mat generate_board_image(const int board_width = 10, const int board_height = 10);

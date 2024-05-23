@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "calibration.hpp"
+#include "boarddisplay.hpp"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -22,10 +23,12 @@ protected:
     void dragEnterEvent(QDragEnterEvent* event) override;
     void dropEvent(QDropEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
+    void closeEvent(QCloseEvent* event) override;
 
 
 private:
     Ui::window *ui;
+    BoardDisplay *boarddisplay;
     bool playing = false;
     int result_max_chars = 8;
     CalibrationResult result;
@@ -36,11 +39,15 @@ private:
     cv::Mat current_frame;
     bool read_success = false;
     const std::string orig_playback_tooltip;
+    std::string last_file;
 
     void status_info(std::string msg);
     void status_warn(std::string msg);
     void status_error(std::string msg);
 
+    void clear_edit_focus();
+    void show_board_display();
+    void close_board_display();
     void attempt_video_load(std::string path);
     void play_toggle();
     void on_playback_select();
@@ -70,6 +77,7 @@ private:
         cv::Scalar board_color = cv::Scalar(0, 127, 255)
     );
     void update_total_coverage();
+    void update_focal_length();
     void to_next_board();
     void to_prev_board();
     void to_beginning();

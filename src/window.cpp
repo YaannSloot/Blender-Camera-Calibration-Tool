@@ -11,6 +11,7 @@
 window::window(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::window)
+    , boarddisplay(nullptr)
     , orig_playback_tooltip("Drag and drop into this window\nOr go to File > Open")
 {
     ui->setupUi(this);
@@ -29,6 +30,16 @@ window::window(QWidget *parent)
     connect(ui->to_end_button, &QPushButton::released, this, &window::to_end);
     connect(ui->update_solution_button, &QPushButton::released, this, &window::update_solution);
     connect(ui->export_prof_button, &QPushButton::released, this, &window::export_profile);
+    connect(ui->display_board_button, &QPushButton::released, this, &window::show_board_display);
+    connect(ui->sensor_width_edit, &QDoubleSpinBox::valueChanged, this, &window::update_focal_length);
+    connect(ui->board_width_edit, &QSpinBox::valueChanged, this, &window::show_board_display);
+    connect(ui->board_height_edit, &QSpinBox::valueChanged, this, &window::show_board_display);
+
+    // Edit behavior fixes
+    connect(ui->board_width_edit, &QSpinBox::editingFinished, this, &window::clear_edit_focus);
+    connect(ui->board_height_edit, &QSpinBox::editingFinished, this, &window::clear_edit_focus);
+    connect(ui->cam_name_edit, &QLineEdit::editingFinished, this, &window::clear_edit_focus);
+    connect(ui->sensor_width_edit, &QDoubleSpinBox::editingFinished, this, &window::clear_edit_focus);
 
     // Action mappings
     connect(ui->actionOpen, &QAction::triggered, this, &window::open_file);
@@ -45,6 +56,7 @@ window::window(QWidget *parent)
 
 window::~window()
 {
+    close_board_display();
     delete ui;
 }
 
@@ -70,6 +82,11 @@ void window::resizeEvent(QResizeEvent* event)
     display_current_frame();
 }
 
+void window::closeEvent(QCloseEvent* event)
+{
+    close_board_display();
+}
+
 void window::attempt_video_load(std::string path)
 {
     cv::VideoCapture new_cap;
@@ -81,7 +98,16 @@ void window::attempt_video_load(std::string path)
     status_info("File \"" + path + "\" loaded");
     cap.release();
     cap = new_cap;
+    last_file = path;
     init_edit_state();
+}
+
+void window::clear_edit_focus()
+{
+    ui->board_width_edit->clearFocus();
+    ui->board_height_edit->clearFocus();
+    ui->cam_name_edit->clearFocus();
+    ui->sensor_width_edit->clearFocus();
 }
 
 void window::play_toggle()
@@ -131,6 +157,21 @@ void window::status_error(std::string msg)
     status->showMessage(msg.c_str());
 }
 
+void window::show_board_display()
+{
+    if (!boarddisplay)
+        boarddisplay = new BoardDisplay();
+    boarddisplay->set_board_img(ui->board_width_edit->value(), ui->board_height_edit->value());
+    boarddisplay->show();
+}
+
+void window::close_board_display()
+{
+    if (boarddisplay)
+        delete boarddisplay;
+    boarddisplay = nullptr;
+}
+
 void window::reset_results_display()
 {
     std::string reset_str;
@@ -145,6 +186,7 @@ void window::reset_results_display()
     ui->dist_k2_num->setText(reset_str.c_str());
     ui->dist_k3_num->setText(reset_str.c_str());
     update_total_coverage();
+    update_focal_length();
 }
 
 void window::display_results()
@@ -164,6 +206,7 @@ void window::display_results()
     ui->dist_k1_num->setText(QString::number(result.cam_Kk.k(0), 'f'));
     ui->dist_k2_num->setText(QString::number(result.cam_Kk.k(1), 'f'));
     ui->dist_k3_num->setText(QString::number(result.cam_Kk.k(2), 'f'));
+    update_focal_length();
 }
 
 const std::vector<ChessboardCorners> window::get_stored_corners() const
@@ -272,8 +315,21 @@ bool window::set_pos(int pos)
         return false;
     cv::Mat next_frame;
     bool next_success = cap.read(next_frame);
-    if (!next_success)
+    for (int i = 0; i < 100; ++i) {
+        if (!next_success)
+            next_success = cap.read(next_frame);
+        else
+            break;
+    }
+    if (!next_success) {
+        status_error("Read failure on frame " + std::to_string(static_cast<int>(cap.get(cv::CAP_PROP_POS_FRAMES)) + 1));
+        cap.release();
+        cv::VideoCapture new_cap;
+        new_cap.open(last_file);
+        cap = new_cap;
+        cap.set(cv::CAP_PROP_POS_FRAMES, current_pos);
         return false;
+    }
     read_success = next_success;
     next_frame.copyTo(current_frame);
     return true;
@@ -360,6 +416,19 @@ void window::update_total_coverage()
     ui->tot_cov_num->setText(QString::number(area / wh * 100, 'f'));
 }
 
+void window::update_focal_length()
+{
+    if (!result.success || !cap.isOpened()) {
+        std::string reset_str;
+        for (int i = 0; i < result_max_chars; ++i) {
+            reset_str += '-';
+        }
+        ui->focal_length_num->setText(reset_str.c_str());
+        return;
+    }
+    ui->focal_length_num->setText(QString::number(result.focal_length(ui->sensor_width_edit->value()), 'f'));
+}
+
 void window::to_next_board()
 {
     if (frame_corners.empty())
@@ -436,6 +505,8 @@ void window::export_profile()
         return;
     }
     out_stream << "cam_name=" << ui->cam_name_edit->text().toStdString() << std::endl;
+    out_stream << "sensor_width=" << ui->sensor_width_edit->value() << std::endl;
+    out_stream << "focal_length=" << result.focal_length(ui->sensor_width_edit->value()) << std::endl;
     out_stream << "sol_cov=" << get_combined_area(result.c_corners) / result.src_img_size.area() * 100 << std::endl;
     out_stream << "avg_err=" << result.reproj_error << std::endl;
     out_stream << "hfov=" << result.h_fov() << std::endl;

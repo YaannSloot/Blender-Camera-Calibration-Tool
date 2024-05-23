@@ -229,3 +229,17 @@ const CalibrationResult calibrate_camera(const std::vector<ChessboardCorners>& c
 	result.success = true;
 	return result;
 }
+
+const cv::Mat generate_board_image(const int board_width, const int board_height)
+{
+	const int img_width = (board_width >= 2) ? board_width + 1 : 3;
+	const int img_height = (board_height >= 2) ? board_height + 1 : 3;
+	cv::Mat out_img(img_height, img_width, CV_8UC1);
+	for (int r = 0; r < img_height; ++r) {
+		for (int c = 0; c < img_width; ++c) {
+			out_img.at<uchar>(r, c) = ((r + c) % 2 == 0) ? 0 : 255;
+		}
+	}
+	return out_img;
+
+}
