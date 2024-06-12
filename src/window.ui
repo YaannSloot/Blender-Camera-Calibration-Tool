@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>970</width>
-    <height>707</height>
+    <width>966</width>
+    <height>698</height>
    </rect>
   </property>
   <property name="acceptDrops">
@@ -603,7 +603,7 @@ Or go to File &gt; Open</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>970</width>
+     <width>966</width>
      <height>22</height>
     </rect>
    </property>
@@ -623,6 +623,7 @@ Or go to File &gt; Open</string>
     <addaction name="actionNext_board"/>
     <addaction name="actionJump_to_beginning"/>
     <addaction name="actionJump_to_end"/>
+    <addaction name="actionToggle_playback"/>
     <addaction name="separator"/>
     <addaction name="actionDetect_board_on_current_frame"/>
    </widget>
@@ -693,6 +694,14 @@ Or go to File &gt; Open</string>
    </property>
    <property name="shortcut">
     <string>C</string>
+   </property>
+  </action>
+  <action name="actionToggle_playback">
+   <property name="text">
+    <string>Toggle playback</string>
+   </property>
+   <property name="shortcut">
+    <string>Space</string>
    </property>
   </action>
  </widget>

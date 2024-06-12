@@ -7,7 +7,7 @@
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
-class window;
+    class window;
 }
 QT_END_NAMESPACE
 
@@ -16,7 +16,7 @@ class window : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit window(QWidget *parent = nullptr);
+    explicit window(QWidget* parent = nullptr);
     ~window();
 
 protected:
@@ -27,8 +27,8 @@ protected:
 
 
 private:
-    Ui::window *ui;
-    BoardDisplay *boarddisplay;
+    Ui::window* ui;
+    BoardDisplay* boarddisplay;
     bool playing = false;
     int result_max_chars = 8;
     CalibrationResult result;
@@ -47,6 +47,7 @@ private:
 
     void clear_edit_focus();
     void show_board_display();
+    void update_board_display();
     void close_board_display();
     void attempt_video_load(std::string path);
     void play_toggle();
@@ -65,11 +66,11 @@ private:
     void next_frame();
     void prev_frame();
     void detect_board();
-    void draw_playback_bar(cv::Mat& img, 
-        int bar_height = 8, 
+    void draw_playback_bar(cv::Mat& img,
+        int bar_height = 8,
         int pos_height = 10,
-        int pos_width = 2, 
-        int board_pos_height = 8, 
+        int pos_width = 2,
+        int board_pos_height = 8,
         int board_pos_width = 2,
         double bar_transparency = 0.8,
         cv::Scalar bar_color = cv::Scalar(255, 156, 127),

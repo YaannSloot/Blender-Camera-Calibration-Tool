@@ -15,10 +15,10 @@ struct ChessboardCorners {
     std::vector<cv::Point3f> obj_corners;
     cv::Size board_size;
     cv::Size src_img_size;
-    // Major 4 corners of chessboard
-    const std::vector<cv::Point2f> major4() const;
+    const std::vector<cv::Point2f> outer_corners() const;
     bool valid = false;
     void draw(cv::Mat& image) const;
+    ChessboardCorners get_undistorted(const Kk& cam_Kk);
 };
 
 struct CalibrationResult {

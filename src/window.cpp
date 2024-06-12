@@ -5,6 +5,7 @@
 #include <QMimeData>
 #include <QUrl>
 #include <QList>
+#include <QMovie> 
 #include <filesystem>
 #include <fstream>
 
@@ -32,8 +33,8 @@ window::window(QWidget *parent)
     connect(ui->export_prof_button, &QPushButton::released, this, &window::export_profile);
     connect(ui->display_board_button, &QPushButton::released, this, &window::show_board_display);
     connect(ui->sensor_width_edit, &QDoubleSpinBox::valueChanged, this, &window::update_focal_length);
-    connect(ui->board_width_edit, &QSpinBox::valueChanged, this, &window::show_board_display);
-    connect(ui->board_height_edit, &QSpinBox::valueChanged, this, &window::show_board_display);
+    connect(ui->board_width_edit, &QSpinBox::valueChanged, this, &window::update_board_display);
+    connect(ui->board_height_edit, &QSpinBox::valueChanged, this, &window::update_board_display);
 
     // Edit behavior fixes
     connect(ui->board_width_edit, &QSpinBox::editingFinished, this, &window::clear_edit_focus);
@@ -50,6 +51,7 @@ window::window(QWidget *parent)
     connect(ui->actionPrevious_board, &QAction::triggered, this, &window::to_prev_board);
     connect(ui->actionJump_to_beginning, &QAction::triggered, this, &window::to_beginning);
     connect(ui->actionJump_to_end, &QAction::triggered, this, &window::to_end);
+    connect(ui->actionToggle_playback, &QAction::triggered, this, &window::play_toggle);
 
     status_info("Ready.");
 }
@@ -113,11 +115,23 @@ void window::clear_edit_focus()
 void window::play_toggle()
 {
     if (playing) {
+        playing = false;
         ui->play_button->setText("Play");
-        status_info("Paused.");
-        ui->play_button->setText("Stop");
-        status_info("Playing...");
+    }
+    else {
         playing = true;
+        ui->play_button->setText("Stop");
+        while (playing) {
+            if (!cap.isOpened() || !set_pos(this->current_pos() + 1))
+                break;
+            display_current_frame();
+            std::stringstream ss;
+            ss << "Advanced to frame " << current_pos() << " of " << total_frames();
+            status_info(ss.str());
+            qApp->processEvents();
+        }
+        playing = false;
+        ui->play_button->setText("Play");
     }
 }
 
@@ -163,6 +177,13 @@ void window::show_board_display()
         boarddisplay = new BoardDisplay();
     boarddisplay->set_board_img(ui->board_width_edit->value(), ui->board_height_edit->value());
     boarddisplay->show();
+}
+
+void window::update_board_display()
+{
+    if (!boarddisplay)
+        return;
+    boarddisplay->set_board_img(ui->board_width_edit->value(), ui->board_height_edit->value());
 }
 
 void window::close_board_display()
@@ -255,10 +276,23 @@ void window::display_current_frame()
     cv::Mat display_frame;
     current_frame.copyTo(display_frame);
     int current_pos = this->current_pos();
-    if (frame_corners.find(current_pos) != frame_corners.end())
-        frame_corners[current_pos].draw(display_frame);
     result.undistort(display_frame);
-    cv::resize(display_frame, resize_img, resize_dims);
+    ChessboardCorners display_corners;
+    if (frame_corners.find(current_pos) != frame_corners.end()) {
+        if (result.success)
+            display_corners = frame_corners[current_pos].get_undistorted(result.cam_Kk);
+        else
+            display_corners = frame_corners[current_pos];
+    }
+    for (auto& pt : display_corners.img_corners) {
+        pt.x /= display_corners.src_img_size.width;
+        pt.y /= display_corners.src_img_size.height;
+        pt.x *= resize_dims.width;
+        pt.y *= resize_dims.height;
+    }
+    display_corners.src_img_size = resize_dims;
+    cv::resize(display_frame, resize_img, resize_dims, 0.0, 0.0, cv::INTER_NEAREST);
+    display_corners.draw(resize_img);
     cv::Mat letterbox_img(cv::Size(w, h), current_frame.type(), cv::Scalar(0, 0, 0));
     const int t = (h - resize_dims.height) / 2;
     int l = (w - resize_dims.width) / 2;

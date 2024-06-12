@@ -39,16 +39,26 @@ ChessboardCorners::ChessboardCorners(int width, int height)
 	}
 }
 
-const std::vector<cv::Point2f> ChessboardCorners::major4() const
+const std::vector<cv::Point2f> ChessboardCorners::outer_corners() const
 {
 	auto& size = this->board_size;
 	if(img_corners.size() < size.area())
 		return std::vector<cv::Point2f>();
 	std::vector<cv::Point2f> result;
-	result.push_back(this->img_corners.at(0));
-	result.push_back(this->img_corners.at(static_cast<size_t>(size.width - 1)));
-	result.push_back(this->img_corners.at(static_cast<size_t>(size.area() - 1)));
-	result.push_back(this->img_corners.at(static_cast<size_t>((size.height - 1) * size.width)));
+	int width = this->board_size.width;
+	int height = this->board_size.height;
+	for (int i = 0; i < width; ++i) {
+		result.push_back(this->img_corners.at(static_cast<size_t>(i)));
+	}
+	for (int i = 0; i < height; ++i) {
+		result.push_back(this->img_corners.at(static_cast<size_t>(i * width + width - 1)));
+	}
+	for (int i = width - 1; i >= 0; --i) {
+		result.push_back(this->img_corners.at(static_cast<size_t>((height - 1) * width + i)));
+	}
+	for (int i = height - 1; i >= 0; --i) {
+		result.push_back(this->img_corners.at(static_cast<size_t>(i * width)));
+	}
 	return result;
 }
 
@@ -57,11 +67,20 @@ void ChessboardCorners::draw(cv::Mat& image) const
 	if (!this->valid)
 		return;
 	cv::drawChessboardCorners(image, this->board_size, this->img_corners, true);
-	auto corners = this->major4();
+	auto corners = this->outer_corners();
 	std::vector<cv::Point2i> corners_i;
 	std::transform(corners.begin(), corners.end(), std::back_inserter(corners_i),
 		[](auto& p) { return cv::Point2i(static_cast<int>(p.x), static_cast<int>(p.y)); });
 	cv::polylines(image, { corners_i }, true, cv::Scalar(255, 255, 0), 2);
+}
+
+ChessboardCorners ChessboardCorners::get_undistorted(const Kk& cam_Kk)
+{
+	ChessboardCorners out(*this);
+	std::vector<cv::Point2f> undis_points;
+	cv::undistortImagePoints(out.img_corners, undis_points, cam_Kk.K, cam_Kk.dist_vector());
+	out.img_corners = undis_points;
+	return out;
 }
 
 void CalibrationResult::undistort(cv::Mat& image) const
@@ -124,8 +143,8 @@ const double get_combined_area(const std::vector<ChessboardCorners>& corners)
 	poly_set boards;
 	poly_set temp;
 	for (auto& cdat : corners) {
-		auto c = cdat.major4();
-		if (c.size() != 4)
+		auto c = cdat.outer_corners();
+		if (c.size() < 4)
 			continue;
 		polygon poly;
 		for (auto& p : c) {
