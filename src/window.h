@@ -46,6 +46,7 @@ private:
     void status_error(std::string msg);
 
     void clear_edit_focus();
+    void auto_detect_boards();
     void show_board_display();
     void update_board_display();
     void close_board_display();

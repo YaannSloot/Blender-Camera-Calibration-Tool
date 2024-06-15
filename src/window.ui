@@ -222,7 +222,7 @@ Or go to File &gt; Open</string>
                  </sizepolicy>
                 </property>
                 <property name="text">
-                 <string>Width (#corners):</string>
+                 <string>Width (#corners)</string>
                 </property>
                </widget>
               </item>
@@ -243,7 +243,7 @@ Or go to File &gt; Open</string>
               <item>
                <widget class="QLabel" name="board_height_lbl">
                 <property name="text">
-                 <string>Height (#corners):</string>
+                 <string>Height (#corners)</string>
                 </property>
                </widget>
               </item>
@@ -270,6 +270,43 @@ Or go to File &gt; Open</string>
           </widget>
          </item>
          <item>
+          <widget class="QGroupBox" name="auto_detect_layout">
+           <property name="title">
+            <string>Auto detect</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_5">
+            <item>
+             <layout class="QHBoxLayout" name="frame_step_layout">
+              <item>
+               <widget class="QLabel" name="frame_step_lbl">
+                <property name="text">
+                 <string>Frame step</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="frame_step_num">
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="maximum">
+                 <number>1000</number>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="QPushButton" name="auto_detect_button">
+              <property name="text">
+               <string>Detect boards</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
           <widget class="QGroupBox" name="cam_settings_layout">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -289,7 +326,7 @@ Or go to File &gt; Open</string>
               <item>
                <widget class="QLabel" name="cam_name_lbl">
                 <property name="text">
-                 <string>Camera name:</string>
+                 <string>Camera name</string>
                 </property>
                </widget>
               </item>
@@ -325,7 +362,7 @@ Or go to File &gt; Open</string>
               <item>
                <widget class="QLabel" name="sensor_width_lbl">
                 <property name="text">
-                 <string>Sensor width (mm):</string>
+                 <string>Sensor width (mm)</string>
                 </property>
                </widget>
               </item>

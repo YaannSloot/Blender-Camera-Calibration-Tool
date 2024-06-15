@@ -6,8 +6,14 @@
 #include <QUrl>
 #include <QList>
 #include <QMovie> 
+#include <QProgressDialog>
+#include <QtConcurrent/QtConcurrent>
 #include <filesystem>
 #include <fstream>
+#include <future>
+#include <chrono>
+
+using namespace std::chrono_literals;
 
 window::window(QWidget *parent)
     : QMainWindow(parent)
@@ -35,6 +41,7 @@ window::window(QWidget *parent)
     connect(ui->sensor_width_edit, &QDoubleSpinBox::valueChanged, this, &window::update_focal_length);
     connect(ui->board_width_edit, &QSpinBox::valueChanged, this, &window::update_board_display);
     connect(ui->board_height_edit, &QSpinBox::valueChanged, this, &window::update_board_display);
+    connect(ui->auto_detect_button, &QPushButton::released, this, &window::auto_detect_boards);
 
     // Edit behavior fixes
     connect(ui->board_width_edit, &QSpinBox::editingFinished, this, &window::clear_edit_focus);
@@ -177,6 +184,49 @@ void window::show_board_display()
         boarddisplay = new BoardDisplay();
     boarddisplay->set_board_img(ui->board_width_edit->value(), ui->board_height_edit->value());
     boarddisplay->show();
+}
+
+void window::auto_detect_boards()
+{
+    if (!cap.isOpened())
+        return;
+
+    // Task setup
+    int current_pos = this->current_pos();
+
+    bool success = set_pos(1); // Add error check here
+
+    int total_frames = this->total_frames();
+    int frame_step = ui->frame_step_num->value();
+    int op_frames = total_frames / frame_step;
+    if (op_frames < 1)
+        op_frames = 1;
+    int board_width = ui->board_width_edit->value();
+    int board_height = ui->board_height_edit->value();
+
+    // Task loop
+    QProgressDialog progress("Detecting boards...", "Cancel", 0, op_frames, this);
+    progress.setWindowTitle("Auto detect");
+    progress.setWindowModality(Qt::WindowModal);
+    for (int i = 0; i < op_frames; ++i) {
+        progress.setValue(i);
+        if (progress.wasCanceled())
+            break;
+        if (i > 0) {
+            for (int j = 0; j < frame_step; ++j) {
+                success = set_pos(this->current_pos() + 1);
+            }
+        }
+        if (!success)
+            continue;
+        auto corners = get_corners(current_frame, board_width, board_height);
+        if (corners.valid)
+            frame_corners[this->current_pos()] = corners;
+    }
+    progress.setValue(op_frames);
+    set_pos(current_pos);
+    update_total_coverage();
+    display_current_frame();
 }
 
 void window::update_board_display()
